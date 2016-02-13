@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <title>ChatIO</title>
+  <style>
+    body {
+      background: #f4f4f4;
+    }
+    
+    #container {
+      width: 700px;
+      margin: 0 auto;
+    }
+    
+    #chatWindow {
+      height: 300px;  
+    }
+
+    #mainWrapper {
+      display: none;
+    }
+
+    #chatWrapper {
+      float: left;
+      border: 1px #ccc solid;
+      border-radius: 10px;
+      background: #f4f4f4;
+      padding: 10px;
+    }
+    
+    #userWrapper {
+      float: left;
+      border: 1px #ccc solid;
+      border-radius: 10px;
+      background: #f4f4f4;
+      padding: 10px;
+      margin-left: 20px;
+      width: 150px;
+      max-height: 200px;
+    }
+
+   
+    #namesWrapper {
+      float: left;
+      border: 1px #ccc solid;
+      border-radius: 10px;
+      background: #f4f4f4;
+      padding: 10px;
+      margin-left: 20px;
+    }
+
+    input {
+      height: 30px;
+    }
+
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="namesWrapper">
+      <h2>ChatIO</h2>
+      <p>Create Username:</p>
+      <form id="usernameForm">
+        <input size="35" id="username" />
+        <input type="submit" value="Submit" />
+      </form>
+
+    </div>
+    
+    <div id="mainWrapper">
+      <h2>ChatIO</h2>
+
+      <div id="chatWrapper">
+        <div id="chatWindow"></div>
+        <form id="messageForm">
+          <input size="35" id="message" placeholder="Type something" />
+          <input type="submit" value="Say" />
+        </form>
+      </div>
+
+      <div id="userWrapper">
+        <div id="users"></div>
+      </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      window.addEventListener('load', function() {
+
+        var chatWindow = document.querySelector('#mainWrapper');;
+        var loginWindow = document.querySelector('#namesWrapper');
+        var socket = io.connect();
+        var messageForm = document.querySelector('#messageForm');
+        var message = document.querySelector('#message');
+        var chat = document.querySelector('#chatWindow');
+
+        var usernameForm = document.querySelector('#usernameForm');
+        var username = document.querySelector('#username');
+
+        var userList = document.querySelector('#users');
+        var loggedUser = null;
+
+        var removeChildren = function(node) {
+          var last;
+          while(last = node.lastChild) node.removeChild(last);
+        };
+
+        usernameForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+
+          socket.emit('new user', username.value);
+          loggedUser = username.value;
+        });
+
+        socket.on('new user registered', function(data) {
+          loginWindow.style.display = 'none';
+          removeChildren(userList);
+
+          data.usernames.forEach(function(username) {
+            var newUser = document.createElement('p');
+            var contents = document.createTextNode(username);
+            newUser.appendChild(contents);
+            userList.appendChild(newUser);
+          });
+          chatWindow.style.display = 'block';
+        });
+
+        messageForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+
+          socket.emit('send message', {username: loggedUser, msg:  message.value});
+          message.value = '';
+          
+        });
+
+        socket.on('new message', function(data) {
+          var msg = document.createElement('p');
+          var contents = document.createTextNode(data.username + ': ' + data.msg);
+          msg.appendChild(contents);
+          chat.appendChild(msg);
+        });
+      });
+    </script>
+</body>
+</html>
+
+
+
+
